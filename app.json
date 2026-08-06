@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "ApnaCareerAI",
+    "slug": "apnacareerai",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.karth.mybackup"
+    }
+  }
+}
