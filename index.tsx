@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, Text, TouchableOpacity, DeviceEventEmitter } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, DeviceEventEmitter, Linking } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import WebViewScreen from './components/WebViewScreen';
@@ -27,38 +27,38 @@ export interface DrawerRouteItem {
 }
 
 const MAIN_ITEMS: DrawerRouteItem[] = [
-  { name: 'Dashboard', url: 'https://apnacareerai.in/dashboard', icon: 'home-outline', isMaterial: false },
-  { name: 'Ask Doubt', url: 'https://apnacareerai.in/doubts/ask', icon: 'head-lightbulb-outline', isMaterial: true },
+  { name: 'Dashboard', url: 'https://www.apnacareerai.in/dashboard', icon: 'home-outline', isMaterial: false },
+  { name: 'Ask Doubt', url: 'https://www.apnacareerai.in/doubts/ask', icon: 'head-lightbulb-outline', isMaterial: true },
 ];
 
 const CAREER_ITEMS: DrawerRouteItem[] = [
-  { name: 'Resume Builder', url: 'https://apnacareerai.in/resume/builder', icon: 'document-text-outline', isMaterial: false },
-  { name: 'Job Search', url: 'https://apnacareerai.in/jobs/search', icon: 'briefcase-outline', isMaterial: false },
-  { name: 'Document Analyze', url: 'https://apnacareerai.in/uploads/upload', icon: 'cloud-upload-outline', isMaterial: false },
+  { name: 'Resume Builder', url: 'https://www.apnacareerai.in/resume/builder', icon: 'document-text-outline', isMaterial: false },
+  { name: 'Job Search', url: 'https://www.apnacareerai.in/jobs/search', icon: 'briefcase-outline', isMaterial: false },
+  { name: 'Document Analyze', url: 'https://www.apnacareerai.in/uploads/upload', icon: 'cloud-upload-outline', isMaterial: false },
 ];
 
 const PRACTICE_ITEMS: DrawerRouteItem[] = [
-  { name: 'AI Quizzes', url: 'https://apnacareerai.in/quiz/', icon: 'help-circle-outline', isMaterial: false },
-  { name: 'PYQ Repository', url: 'https://apnacareerai.in/pyq/', icon: 'library-outline', isMaterial: false },
+  { name: 'AI Quizzes', url: 'https://www.apnacareerai.in/quiz/', icon: 'help-circle-outline', isMaterial: false },
+  { name: 'PYQ Repository', url: 'https://www.apnacareerai.in/pyq/', icon: 'library-outline', isMaterial: false },
 ];
 
 const ENGAGE_ITEMS: DrawerRouteItem[] = [
-  { name: 'Focus Timer', url: 'https://apnacareerai.in/engagement/timer', icon: 'timer-outline', isMaterial: false },
-  { name: 'Exam Countdown', url: 'https://apnacareerai.in/engagement/exams', icon: 'calendar-outline', isMaterial: false },
-  { name: 'My Notes', url: 'https://apnacareerai.in/engagement/notes', icon: 'journal-outline', isMaterial: false },
-  { name: 'My Streak', url: 'https://apnacareerai.in/engagement/dashboard', icon: 'flame-outline', isMaterial: false },
-  { name: 'Analytics', url: 'https://apnacareerai.in/engagement/analytics', icon: 'analytics-outline', isMaterial: false },
+  { name: 'Focus Timer', url: 'https://www.apnacareerai.in/engagement/timer', icon: 'timer-outline', isMaterial: false },
+  { name: 'Exam Countdown', url: 'https://www.apnacareerai.in/engagement/exams', icon: 'calendar-outline', isMaterial: false },
+  { name: 'My Notes', url: 'https://www.apnacareerai.in/engagement/notes', icon: 'journal-outline', isMaterial: false },
+  { name: 'My Streak', url: 'https://www.apnacareerai.in/engagement/dashboard', icon: 'flame-outline', isMaterial: false },
+  { name: 'Analytics', url: 'https://www.apnacareerai.in/engagement/analytics', icon: 'analytics-outline', isMaterial: false },
 ];
 
 const COMMUNITY_ITEMS: DrawerRouteItem[] = [
-  { name: 'Peer Study Rooms', url: 'https://apnacareerai.in/rooms/lobby', icon: 'people-outline', isMaterial: false },
-  { name: 'Leaderboard', url: 'https://apnacareerai.in/engagement/leaderboard', icon: 'trophy-outline', isMaterial: false },
+  { name: 'Peer Study Rooms', url: 'https://www.apnacareerai.in/rooms/lobby', icon: 'people-outline', isMaterial: false },
+  { name: 'Leaderboard', url: 'https://www.apnacareerai.in/engagement/leaderboard', icon: 'trophy-outline', isMaterial: false },
 ];
 
 const ACCOUNT_ITEMS: DrawerRouteItem[] = [
-  { name: 'My Account', url: 'https://apnacareerai.in/payments/account', icon: 'person-outline', isMaterial: false },
-  { name: 'Doubt History', url: 'https://apnacareerai.in/doubts/history', icon: 'time-outline', isMaterial: false },
-  { name: 'My Resumes', url: 'https://apnacareerai.in/resume/my-resumes', icon: 'documents-outline', isMaterial: false },
+  { name: 'My Account', url: 'https://www.apnacareerai.in/payments/account', icon: 'person-outline', isMaterial: false },
+  { name: 'Doubt History', url: 'https://www.apnacareerai.in/doubts/history', icon: 'time-outline', isMaterial: false },
+  { name: 'My Resumes', url: 'https://www.apnacareerai.in/resume/my-resumes', icon: 'documents-outline', isMaterial: false },
 ];
 
 function CustomDrawerContent(props: any) {
@@ -233,7 +233,7 @@ function CustomDrawerContent(props: any) {
         onPress={() => {
           setCurrentRoute({
             name: 'Logout',
-            url: 'https://apnacareerai.in/auth/logout?t=' + Date.now(),
+            url: 'https://www.apnacareerai.in/auth/logout?t=' + Date.now(),
             icon: 'log-out-outline',
             isMaterial: false,
           });
@@ -254,12 +254,42 @@ export default function App() {
   const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
+    const handleDeepLink = (url: string | null) => {
+      if (!url) return;
+      if (url.includes('reset_password') || url.includes('/auth/')) {
+        let cleanUrl = url;
+        if (cleanUrl.startsWith('com.karth.mybackup://')) {
+          cleanUrl = cleanUrl.replace('com.karth.mybackup://', 'https://www.apnacareerai.in/');
+        }
+        // Ensure https://www.apnacareerai.in format
+        if (cleanUrl.startsWith('https://apnacareerai.in')) {
+          cleanUrl = cleanUrl.replace('https://apnacareerai.in', 'https://www.apnacareerai.in');
+        } else if (cleanUrl.startsWith('http://apnacareerai.in')) {
+          cleanUrl = cleanUrl.replace('http://apnacareerai.in', 'https://www.apnacareerai.in');
+        }
+
+        setCurrentRoute({
+          name: cleanUrl.includes('reset_password') ? 'Reset Password' : 'Login',
+          url: cleanUrl,
+          icon: cleanUrl.includes('reset_password') ? 'key-outline' : 'person-outline',
+          isMaterial: false,
+        });
+      }
+    };
+
+    Linking.getInitialURL().then(handleDeepLink);
+    const linkingSub = Linking.addEventListener('url', (event) => handleDeepLink(event.url));
+
     const sub = DeviceEventEmitter.addListener('authStateChanged', (data) => {
       setIsLoggedIn(data.loggedIn);
       if (data.name) setUserName(data.name);
       if (data.premium !== undefined) setIsPremium(data.premium);
     });
-    return () => sub.remove();
+
+    return () => {
+      linkingSub.remove();
+      sub.remove();
+    };
   }, []);
 
   return (
