@@ -20,48 +20,86 @@ export default function WebViewScreen({ currentRoute, setCurrentRoute }: any) {
 
   // JavaScript to hide the top navigation and footers, and extract auth state
   const hideHeaderScript = `
-    setTimeout(function() {
-      try {
-        const selectors = ['header', 'nav:not([class*="quiz"])', '.navbar', '.header', '#header', '.elementor-location-header', '.site-header'];
-        selectors.forEach(selector => {
-          const elements = document.querySelectorAll(selector);
-          elements.forEach(el => {
-            if(el) el.style.setProperty('display', 'none', 'important');
+    (function() {
+      function hideHeaders() {
+        try {
+          const selectors = ['header', 'nav:not([class*="quiz"])', '.navbar', '.header', '#header', '.elementor-location-header', '.site-header'];
+          selectors.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(el => {
+              if(el) el.style.setProperty('display', 'none', 'important');
+            });
           });
-        });
-      } catch(e) {}
-    }, 100); 
+        } catch(e) {}
+      }
 
-    setTimeout(function() {
-      try {
-        if (window.location.href.includes('/auth/login')) {
-          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'AUTH_STATE', loggedIn: false }));
-          return;
-        }
+      function checkAuth() {
+        try {
+          const url = window.location.href;
+          
+          // If on explicit auth pages
+          if (url.includes('/auth/login') || url.includes('/auth/register') || url.includes('/auth/signup') || url.includes('/auth/reset_password')) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'AUTH_STATE', loggedIn: false, name: 'Profile', premium: false }));
+            return;
+          }
 
-        let name = "Profile";
-        let premium = false;
+          let name = "Profile";
+          let premium = false;
+          let hasWelcomeGreeting = false;
 
-        const textNodes = Array.from(document.querySelectorAll('h1, h2, h3, p, span, a, div')).map(e => e.innerText || '');
-        for (let i = 0; i < textNodes.length; i++) {
-           let text = textNodes[i];
-           if (text.includes('Welcome, ') || text.includes('Welcome back, ') || text.includes('Hello, ') || text.includes('Hi, ')) {
-              const match = text.match(/(Welcome(?: back)?|Hello|Hi),\\s*([^!\\n]+)/i);
-              if (match && match[2]) {
-                 name = match[2].trim();
-                 break;
-              }
-           }
-        }
+          const textNodes = Array.from(document.querySelectorAll('h1, h2, h3, h4, p, span, a, div')).map(e => e.innerText || '');
+          for (let i = 0; i < textNodes.length; i++) {
+             let text = textNodes[i];
+             if (text.includes('Welcome, ') || text.includes('Welcome back, ') || text.includes('Hello, ') || text.includes('Hi, ')) {
+                const match = text.match(/(Welcome(?: back)?|Hello|Hi),\\s*([^!\\n]+)/i);
+                if (match && match[2] && match[2].trim().length < 30) {
+                   name = match[2].trim();
+                   hasWelcomeGreeting = true;
+                   break;
+                }
+             }
+          }
 
-        if (document.body.innerText.includes('Premium') || document.body.innerText.includes('PREMIUM')) {
-           premium = true;
-        }
+          if (document.body.innerText.includes('Premium') || document.body.innerText.includes('PREMIUM')) {
+             premium = true;
+          }
 
-        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'AUTH_STATE', loggedIn: true, name: name, premium: premium }));
-      } catch(e) {}
-    }, 1500);
+          const hasLogout = !!document.querySelector('a[href*="/auth/logout"]') || 
+                            Array.from(document.querySelectorAll('a, button, span')).some(el => {
+                              const t = (el.innerText || '').trim().toLowerCase();
+                              return t === 'logout' || t === 'log out' || t === 'sign out';
+                            });
 
+          const hasLoginBtn = !!document.querySelector('a[href*="/auth/login"], a[href*="/auth/register"]') ||
+                              Array.from(document.querySelectorAll('a, button')).some(el => {
+                                const t = (el.innerText || '').trim().toLowerCase();
+                                return t === 'login' || t === 'sign in' || t === 'sign up' || t === 'get started';
+                              });
+
+          let isLoggedIn = false;
+          if (hasLogout || hasWelcomeGreeting) {
+            isLoggedIn = true;
+          } else if (url.includes('/dashboard') || url.includes('/payments/account') || url.includes('/resume/my-resumes')) {
+            isLoggedIn = true;
+          } else if (hasLoginBtn) {
+            isLoggedIn = false;
+          }
+
+          window.ReactNativeWebView.postMessage(JSON.stringify({ 
+            type: 'AUTH_STATE', 
+            loggedIn: isLoggedIn, 
+            name: name, 
+            premium: premium 
+          }));
+        } catch(e) {}
+      }
+
+      hideHeaders();
+      checkAuth();
+      setTimeout(hideHeaders, 100);
+      setTimeout(checkAuth, 300);
+      setTimeout(checkAuth, 1200);
+    })();
     true;
   `;
 

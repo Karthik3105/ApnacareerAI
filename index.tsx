@@ -93,156 +93,211 @@ function CustomDrawerContent(props: any) {
 
   return (
     <DrawerContentScrollView {...props}>
-      {isLoggedIn && (
-        <View style={styles.drawerProfileContainer}>
-          <Ionicons name="person-circle-outline" size={24} color="#b8860b" />
-          <Text style={styles.drawerProfileText}>{userName}</Text>
-          {isPremium && (
-            <View style={styles.premiumBadge}>
-              <Text style={styles.premiumText}>PREMIUM</Text>
+      {isLoggedIn ? (
+        <>
+          {/* User Profile Header */}
+          <View style={styles.drawerProfileContainer}>
+            <Ionicons name="person-circle-outline" size={24} color="#b8860b" />
+            <Text style={styles.drawerProfileText}>{userName}</Text>
+            {isPremium && (
+              <View style={styles.premiumBadge}>
+                <Text style={styles.premiumText}>PREMIUM</Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.drawerSeparator} />
+
+          {/* Main Navigation Items */}
+          {MAIN_ITEMS.map((item) => renderItem(item))}
+
+          {/* Career Section Header & Accordion */}
+          <View style={styles.sectionContainer}>
+            <TouchableOpacity
+              style={styles.sectionHeader}
+              onPress={() => setIsCareerExpanded(!isCareerExpanded)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.sectionTitleRow}>
+                <Ionicons name="briefcase-outline" size={18} color="#8b5cf6" />
+                <Text style={styles.sectionHeaderText}>CAREER</Text>
+                <View style={styles.badgePurple}>
+                  <Text style={styles.badgePurpleText}>{CAREER_ITEMS.length}</Text>
+                </View>
+              </View>
+              <Ionicons
+                name={isCareerExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
+                size={18}
+                color="#64748b"
+              />
+            </TouchableOpacity>
+
+            {isCareerExpanded && (
+              <View style={styles.sectionItemsContainer}>
+                {CAREER_ITEMS.map((item) => renderItem(item, true))}
+              </View>
+            )}
+          </View>
+
+          {/* Practice Section Header & Accordion */}
+          <View style={styles.sectionContainer}>
+            <TouchableOpacity
+              style={styles.sectionHeader}
+              onPress={() => setIsPracticeExpanded(!isPracticeExpanded)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.sectionTitleRow}>
+                <Ionicons name="school-outline" size={18} color="#10b981" />
+                <Text style={styles.sectionHeaderText}>PRACTICE</Text>
+                <View style={styles.badgeGreen}>
+                  <Text style={styles.badgeGreenText}>{PRACTICE_ITEMS.length}</Text>
+                </View>
+              </View>
+              <Ionicons
+                name={isPracticeExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
+                size={18}
+                color="#64748b"
+              />
+            </TouchableOpacity>
+
+            {isPracticeExpanded && (
+              <View style={styles.sectionItemsContainer}>
+                {PRACTICE_ITEMS.map((item) => renderItem(item, true))}
+              </View>
+            )}
+          </View>
+
+          {/* Engage Section Header & Accordion */}
+          <View style={styles.sectionContainer}>
+            <TouchableOpacity
+              style={styles.sectionHeader}
+              onPress={() => setIsEngageExpanded(!isEngageExpanded)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.sectionTitleRow}>
+                <Ionicons name="flash-outline" size={18} color="#d97706" />
+                <Text style={styles.sectionHeaderText}>ENGAGE</Text>
+                <View style={styles.badgeOrange}>
+                  <Text style={styles.badgeOrangeText}>{ENGAGE_ITEMS.length}</Text>
+                </View>
+              </View>
+              <Ionicons
+                name={isEngageExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
+                size={18}
+                color="#64748b"
+              />
+            </TouchableOpacity>
+
+            {isEngageExpanded && (
+              <View style={styles.sectionItemsContainer}>
+                {ENGAGE_ITEMS.map((item) => renderItem(item, true))}
+              </View>
+            )}
+          </View>
+
+          {/* Community Section Header & Accordion */}
+          <View style={styles.sectionContainer}>
+            <TouchableOpacity
+              style={styles.sectionHeader}
+              onPress={() => setIsCommunityExpanded(!isCommunityExpanded)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.sectionTitleRow}>
+                <Ionicons name="people-circle-outline" size={18} color="#0284c7" />
+                <Text style={styles.sectionHeaderText}>COMMUNITY</Text>
+                <View style={styles.badgeBlue}>
+                  <Text style={styles.badgeBlueText}>NEW</Text>
+                </View>
+              </View>
+              <Ionicons
+                name={isCommunityExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
+                size={18}
+                color="#64748b"
+              />
+            </TouchableOpacity>
+
+            {isCommunityExpanded && (
+              <View style={styles.sectionItemsContainer}>
+                {COMMUNITY_ITEMS.map((item) => renderItem(item, true))}
+              </View>
+            )}
+          </View>
+
+          {/* Account Section Divider */}
+          <View style={styles.divider} />
+
+          {ACCOUNT_ITEMS.map((item) => renderItem(item))}
+
+          {/* Explicit Logout Button */}
+          <DrawerItem
+            label="Logout"
+            icon={({ color, size }) => <Ionicons name="log-out-outline" size={size} color={color} />}
+            onPress={() => {
+              setCurrentRoute({
+                name: 'Logout',
+                url: 'https://www.apnacareerai.in/auth/logout?t=' + Date.now(),
+                icon: 'log-out-outline',
+                isMaterial: false,
+              });
+              props.navigation.closeDrawer();
+            }}
+            inactiveTintColor="#ef4444"
+            activeTintColor="#dc2626"
+            focused={currentRoute.name === 'Logout'}
+          />
+        </>
+      ) : (
+        <>
+          {/* Guest Header */}
+          <View style={styles.guestProfileContainer}>
+            <View style={styles.guestLockBadge}>
+              <Ionicons name="lock-closed" size={22} color="#ffffff" />
             </View>
-          )}
-        </View>
+            <View style={styles.guestTextContainer}>
+              <Text style={styles.guestTitle}>ApnaCareerAI</Text>
+              <Text style={styles.guestSubtitle}>Sign in to unlock all features</Text>
+            </View>
+          </View>
+
+          <View style={styles.drawerSeparator} />
+
+          {/* 1. Login Option */}
+          <DrawerItem
+            label="Login"
+            icon={({ color, size }) => <Ionicons name="log-in-outline" size={24} color="#1e293b" />}
+            focused={currentRoute.name === 'Login'}
+            onPress={() => {
+              setCurrentRoute({
+                name: 'Login',
+                url: 'https://www.apnacareerai.in/auth/login',
+                icon: 'log-in-outline',
+                isMaterial: false,
+              });
+              props.navigation.closeDrawer();
+            }}
+            inactiveTintColor="#1e293b"
+            activeTintColor="#2563eb"
+            activeBackgroundColor="#eff6ff"
+            labelStyle={{ fontWeight: '700', fontSize: 16 }}
+          />
+
+          {/* 2. Sign Up Button */}
+          <TouchableOpacity
+            style={styles.signUpButtonContainer}
+            activeOpacity={0.85}
+            onPress={() => {
+              setCurrentRoute({
+                name: 'Sign Up',
+                url: 'https://www.apnacareerai.in/auth/register',
+                icon: 'person-add-outline',
+                isMaterial: false,
+              });
+              props.navigation.closeDrawer();
+            }}
+          >
+            <Text style={styles.signUpButtonText}>Sign Up</Text>
+          </TouchableOpacity>
+        </>
       )}
-      <View style={styles.drawerSeparator} />
-
-      {/* Main Navigation Items */}
-      {MAIN_ITEMS.map((item) => renderItem(item))}
-
-      {/* Career Section Header & Accordion */}
-      <View style={styles.sectionContainer}>
-        <TouchableOpacity
-          style={styles.sectionHeader}
-          onPress={() => setIsCareerExpanded(!isCareerExpanded)}
-          activeOpacity={0.7}
-        >
-          <View style={styles.sectionTitleRow}>
-            <Ionicons name="briefcase-outline" size={18} color="#8b5cf6" />
-            <Text style={styles.sectionHeaderText}>CAREER</Text>
-            <View style={styles.badgePurple}>
-              <Text style={styles.badgePurpleText}>{CAREER_ITEMS.length}</Text>
-            </View>
-          </View>
-          <Ionicons
-            name={isCareerExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
-            size={18}
-            color="#64748b"
-          />
-        </TouchableOpacity>
-
-        {isCareerExpanded && (
-          <View style={styles.sectionItemsContainer}>
-            {CAREER_ITEMS.map((item) => renderItem(item, true))}
-          </View>
-        )}
-      </View>
-
-      {/* Practice Section Header & Accordion */}
-      <View style={styles.sectionContainer}>
-        <TouchableOpacity
-          style={styles.sectionHeader}
-          onPress={() => setIsPracticeExpanded(!isPracticeExpanded)}
-          activeOpacity={0.7}
-        >
-          <View style={styles.sectionTitleRow}>
-            <Ionicons name="school-outline" size={18} color="#10b981" />
-            <Text style={styles.sectionHeaderText}>PRACTICE</Text>
-            <View style={styles.badgeGreen}>
-              <Text style={styles.badgeGreenText}>{PRACTICE_ITEMS.length}</Text>
-            </View>
-          </View>
-          <Ionicons
-            name={isPracticeExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
-            size={18}
-            color="#64748b"
-          />
-        </TouchableOpacity>
-
-        {isPracticeExpanded && (
-          <View style={styles.sectionItemsContainer}>
-            {PRACTICE_ITEMS.map((item) => renderItem(item, true))}
-          </View>
-        )}
-      </View>
-
-      {/* Engage Section Header & Accordion */}
-      <View style={styles.sectionContainer}>
-        <TouchableOpacity
-          style={styles.sectionHeader}
-          onPress={() => setIsEngageExpanded(!isEngageExpanded)}
-          activeOpacity={0.7}
-        >
-          <View style={styles.sectionTitleRow}>
-            <Ionicons name="flash-outline" size={18} color="#d97706" />
-            <Text style={styles.sectionHeaderText}>ENGAGE</Text>
-            <View style={styles.badgeOrange}>
-              <Text style={styles.badgeOrangeText}>{ENGAGE_ITEMS.length}</Text>
-            </View>
-          </View>
-          <Ionicons
-            name={isEngageExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
-            size={18}
-            color="#64748b"
-          />
-        </TouchableOpacity>
-
-        {isEngageExpanded && (
-          <View style={styles.sectionItemsContainer}>
-            {ENGAGE_ITEMS.map((item) => renderItem(item, true))}
-          </View>
-        )}
-      </View>
-
-      {/* Community Section Header & Accordion */}
-      <View style={styles.sectionContainer}>
-        <TouchableOpacity
-          style={styles.sectionHeader}
-          onPress={() => setIsCommunityExpanded(!isCommunityExpanded)}
-          activeOpacity={0.7}
-        >
-          <View style={styles.sectionTitleRow}>
-            <Ionicons name="people-circle-outline" size={18} color="#0284c7" />
-            <Text style={styles.sectionHeaderText}>COMMUNITY</Text>
-            <View style={styles.badgeBlue}>
-              <Text style={styles.badgeBlueText}>NEW</Text>
-            </View>
-          </View>
-          <Ionicons
-            name={isCommunityExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
-            size={18}
-            color="#64748b"
-          />
-        </TouchableOpacity>
-
-        {isCommunityExpanded && (
-          <View style={styles.sectionItemsContainer}>
-            {COMMUNITY_ITEMS.map((item) => renderItem(item, true))}
-          </View>
-        )}
-      </View>
-
-      {/* Account Section Divider */}
-      <View style={styles.divider} />
-
-      {ACCOUNT_ITEMS.map((item) => renderItem(item))}
-
-      {/* Explicit Logout Button */}
-      <DrawerItem
-        label="Logout"
-        icon={({ color, size }) => <Ionicons name="log-out-outline" size={size} color={color} />}
-        onPress={() => {
-          setCurrentRoute({
-            name: 'Logout',
-            url: 'https://www.apnacareerai.in/auth/logout?t=' + Date.now(),
-            icon: 'log-out-outline',
-            isMaterial: false,
-          });
-          props.navigation.closeDrawer();
-        }}
-        inactiveTintColor="#ef4444"
-        activeTintColor="#dc2626"
-        focused={currentRoute.name === 'Logout'}
-      />
     </DrawerContentScrollView>
   );
 }
@@ -454,5 +509,59 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingTop: 10,
     marginHorizontal: 10,
+  },
+  guestProfileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    padding: 14,
+    marginHorizontal: 10,
+    marginTop: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  guestLockBadge: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#475569',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guestTextContainer: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  guestTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0f172a',
+  },
+  guestSubtitle: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 2,
+  },
+  signUpButtonContainer: {
+    backgroundColor: '#eab308',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginHorizontal: 12,
+    marginTop: 6,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#ca8a04',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  signUpButtonText: {
+    color: '#1e293b',
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
 });
