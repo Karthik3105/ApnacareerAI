@@ -20,19 +20,57 @@ export default function WebViewScreen({ currentRoute, setCurrentRoute }: any) {
   const [actualUrl, setActualUrl] = useState(currentRoute.url);
   const [isOffline, setIsOffline] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
-  const [hasError, setHasError] = useState(false);
 
-  // Store the target URL so retrying loads the intended page, not the error URL
+  // Store the target URL so retrying loads the intended page
   const targetUrlRef = useRef(currentRoute.url);
   useEffect(() => {
     targetUrlRef.current = currentRoute.url;
-    setHasError(false);
   }, [currentRoute.url]);
 
   // Animations for popup
-  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+  const scaleAnim = useRef(new Animated.Value(0.85)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  // Real-time ping checking
+  const testConnection = async (): Promise<boolean> => {
+    try {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), 2500);
+      const res = await fetch('https://www.google.com/generate_204', {
+        method: 'HEAD',
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      clearTimeout(id);
+      return res.status >= 200 && res.status < 400;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const verifyAndSyncNetwork = async () => {
+    const online = await testConnection();
+    if (!online) {
+      setIsOffline(true);
+    } else if (isOffline) {
+      setIsOffline(false);
+      if (webViewRef.current) {
+        const dest = targetUrlRef.current || currentRoute.url || 'https://www.apnacareerai.in/dashboard';
+        webViewRef.current.injectJavaScript(`window.location.href = '${dest}'; true;`);
+      }
+    }
+    return online;
+  };
+
+  // Heartbeat network check (runs every 3 seconds)
+  useEffect(() => {
+    verifyAndSyncNetwork();
+    const interval = setInterval(() => {
+      verifyAndSyncNetwork();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isOffline]);
 
   // Pulse animation for offline icon
   useEffect(() => {
@@ -55,7 +93,7 @@ export default function WebViewScreen({ currentRoute, setCurrentRoute }: any) {
       pulseLoop = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
-            toValue: 1.2,
+            toValue: 1.22,
             duration: 850,
             useNativeDriver: true,
           }),
@@ -70,7 +108,7 @@ export default function WebViewScreen({ currentRoute, setCurrentRoute }: any) {
     } else {
       Animated.parallel([
         Animated.timing(scaleAnim, {
-          toValue: 0.9,
+          toValue: 0.85,
           duration: 200,
           useNativeDriver: true,
         }),
@@ -87,21 +125,21 @@ export default function WebViewScreen({ currentRoute, setCurrentRoute }: any) {
     };
   }, [isOffline]);
 
-  const handleRetry = () => {
+  const handleRetry = async () => {
     setIsRetrying(true);
-    const destination = targetUrlRef.current || currentRoute.url || 'https://www.apnacareerai.in/dashboard';
-    
-    // Clear error flag before reload
-    setHasError(false);
-
-    if (webViewRef.current) {
-      webViewRef.current.injectJavaScript(`window.location.href = '${destination}'; true;`);
-    }
-
-    // Keep spinner spinning for at least 2 seconds while trying
-    setTimeout(() => {
+    const online = await testConnection();
+    if (online) {
+      setIsOffline(false);
       setIsRetrying(false);
-    }, 2500);
+      if (webViewRef.current) {
+        const destination = targetUrlRef.current || currentRoute.url || 'https://www.apnacareerai.in/dashboard';
+        webViewRef.current.injectJavaScript(`window.location.href = '${destination}'; true;`);
+      }
+    } else {
+      setTimeout(() => {
+        setIsRetrying(false);
+      }, 1000);
+    }
   };
 
   const openNetworkSettings = () => {
@@ -116,14 +154,14 @@ export default function WebViewScreen({ currentRoute, setCurrentRoute }: any) {
     }
   };
 
-  // When currentRoute changes, navigate to new URL
+  // When currentRoute changes, navigate
   useEffect(() => {
     if (webViewRef.current) {
       webViewRef.current.injectJavaScript(`window.location.href = '${currentRoute.url}'; true;`);
     }
   }, [currentRoute.url]);
 
-  // JavaScript to hide the top navigation, footers, extract auth state, and listen to online/offline events
+  // JavaScript to hide the top navigation, footers, extract auth state
   const hideHeaderScript = `
     (function() {
       function hideHeaders() {
@@ -142,7 +180,6 @@ export default function WebViewScreen({ currentRoute, setCurrentRoute }: any) {
         try {
           const url = window.location.href;
           
-          // If on explicit auth pages
           if (url.includes('/auth/login') || url.includes('/auth/register') || url.includes('/auth/signup') || url.includes('/auth/reset_password')) {
             window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'AUTH_STATE', loggedIn: false, name: 'Profile', premium: false }));
             return;
@@ -199,13 +236,6 @@ export default function WebViewScreen({ currentRoute, setCurrentRoute }: any) {
         } catch(e) {}
       }
 
-      window.addEventListener('offline', function() {
-        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'NETWORK_OFFLINE' }));
-      });
-      window.addEventListener('online', function() {
-        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'NETWORK_ONLINE' }));
-      });
-
       hideHeaders();
       checkAuth();
       setTimeout(hideHeaders, 100);
@@ -248,22 +278,14 @@ export default function WebViewScreen({ currentRoute, setCurrentRoute }: any) {
         cacheEnabled={false}
         cacheMode="LOAD_NO_CACHE"
         injectedJavaScript={hideHeaderScript}
-        onError={(syntheticEvent) => {
+        onError={() => {
           setIsOffline(true);
-          setHasError(true);
           setIsRetrying(false);
         }}
         onHttpError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
-          if (nativeEvent.statusCode >= 500) {
+          if (nativeEvent.statusCode >= 500 || nativeEvent.statusCode === 0) {
             setIsOffline(true);
-            setHasError(true);
-          }
-        }}
-        onLoadStart={(syntheticEvent) => {
-          const url = syntheticEvent.nativeEvent.url || '';
-          if (url.startsWith('https://www.apnacareerai.in') || url.startsWith('https://apnacareerai.in')) {
-            setHasError(false);
           }
         }}
         onLoadEnd={(syntheticEvent) => {
@@ -272,7 +294,7 @@ export default function WebViewScreen({ currentRoute, setCurrentRoute }: any) {
           
           setIsRetrying(false);
 
-          if (!isErrorUrl && !hasError && (url.startsWith('https://') || url.startsWith('http://'))) {
+          if (!isErrorUrl && (url.startsWith('https://') || url.startsWith('http://'))) {
             setIsOffline(false);
             webViewRef.current?.injectJavaScript(hideHeaderScript);
           }
@@ -284,10 +306,6 @@ export default function WebViewScreen({ currentRoute, setCurrentRoute }: any) {
           if (!isErrorUrl && (url.startsWith('https://') || url.startsWith('http://'))) {
             setCanGoBack(navState.canGoBack);
             setActualUrl(url);
-
-            if (!navState.loading && !hasError) {
-              setIsOffline(false);
-            }
 
             if (currentRoute.name === 'Logout' && !url.includes('/auth/logout')) {
               setCurrentRoute({
@@ -307,11 +325,6 @@ export default function WebViewScreen({ currentRoute, setCurrentRoute }: any) {
             const data = JSON.parse(event.nativeEvent.data);
             if (data.type === 'AUTH_STATE') {
               DeviceEventEmitter.emit('authStateChanged', data);
-            } else if (data.type === 'NETWORK_OFFLINE') {
-              setIsOffline(true);
-              setHasError(true);
-            } else if (data.type === 'NETWORK_ONLINE') {
-              handleRetry();
             }
           } catch(e) {}
         }}
@@ -324,7 +337,7 @@ export default function WebViewScreen({ currentRoute, setCurrentRoute }: any) {
         showsVerticalScrollIndicator={false}
       />
 
-      {/* Persistent Animated Offline Overlay (Guaranteed to stay until internet is restored) */}
+      {/* Persistent Animated Offline Overlay */}
       {isOffline && (
         <View style={styles.offlineOverlay}>
           <Animated.View
@@ -347,14 +360,14 @@ export default function WebViewScreen({ currentRoute, setCurrentRoute }: any) {
                 ]}
               />
               <View style={styles.iconCircle}>
-                <MaterialCommunityIcons name="wifi-off" size={40} color="#ffffff" />
+                <MaterialCommunityIcons name="wifi-off" size={42} color="#ffffff" />
               </View>
             </View>
 
             {/* Title & Description */}
             <Text style={styles.popupTitle}>No Internet Connection</Text>
             <Text style={styles.popupMessage}>
-              You are currently offline. Please turn on your Mobile Data or Wi-Fi to continue using ApnaCareerAI.
+              Please turn on your Mobile Data or Wi-Fi to continue using ApnaCareerAI.
             </Text>
 
             {/* Action Buttons */}
@@ -381,7 +394,7 @@ export default function WebViewScreen({ currentRoute, setCurrentRoute }: any) {
                 onPress={openNetworkSettings}
               >
                 <Ionicons name="settings-outline" size={18} color="#2563eb" style={{ marginRight: 6 }} />
-                <Text style={styles.settingsButtonText}>Wi-Fi / Network Settings</Text>
+                <Text style={styles.settingsButtonText}>Turn on Wi-Fi / Settings</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -413,12 +426,12 @@ const styles = StyleSheet.create({
   },
   offlineOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0f172a',
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
-    zIndex: 99999,
-    elevation: 50,
+    zIndex: 999999,
+    elevation: 100,
   },
   popupCard: {
     width: '100%',
@@ -429,10 +442,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.35,
-    shadowRadius: 24,
-    elevation: 25,
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.4,
+    shadowRadius: 28,
+    elevation: 30,
   },
   iconPulseWrapper: {
     width: 96,
