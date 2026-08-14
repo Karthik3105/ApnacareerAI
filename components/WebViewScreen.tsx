@@ -164,6 +164,27 @@ export default function WebViewScreen({ currentRoute, setCurrentRoute }: any) {
   // JavaScript to hide the top navigation, footers, extract auth state
   const hideHeaderScript = `
     (function() {
+      function injectResponsiveTables() {
+        if (!document.getElementById('mobile-table-styles')) {
+          const style = document.createElement('style');
+          style.id = 'mobile-table-styles';
+          style.textContent = 
+            "table { width: 100% !important; max-width: 100vw !important; table-layout: fixed !important; border-collapse: collapse !important; } " +
+            "th, td { padding: 4px 2px !important; font-size: clamp(9px, 2.4vw, 11px) !important; word-break: break-word !important; vertical-align: middle !important; overflow: hidden !important; text-overflow: ellipsis !important; } " +
+            "th:nth-child(1), td:nth-child(1) { width: 10% !important; text-align: center !important; } " +
+            "td:nth-child(1) * { font-size: 11px !important; } " +
+            "th:nth-child(2), td:nth-child(2) { width: 33% !important; white-space: nowrap !important; text-align: left !important; } " +
+            "th:nth-child(3), td:nth-child(3) { width: 22% !important; text-align: center !important; } " +
+            "th:nth-child(4), td:nth-child(4) { width: 22% !important; text-align: center !important; } " +
+            "th:nth-child(5), td:nth-child(5) { width: 13% !important; text-align: center !important; } " +
+            "td:nth-child(4) * { font-size: 9px !important; font-weight: normal !important; letter-spacing: 0 !important; } " +
+            "td:nth-child(4) span { padding: 2px 4px !important; border-radius: 4px !important; } " +
+            "td:nth-child(4) img, td:nth-child(4) svg { width: 10px !important; height: 10px !important; max-width: 10px !important; display: inline-block !important; } " +
+            ".table-responsive, .wdt-table-wrapper, figure.wp-block-table { overflow-x: hidden !important; width: 100% !important; max-width: 100vw !important; display: block !important; }";
+          document.head.appendChild(style);
+        }
+      }
+
       function hideHeaders() {
         try {
           const selectors = ['header', 'nav:not([class*="quiz"])', '.navbar', '.header', '#header', '.elementor-location-header', '.site-header'];
@@ -236,11 +257,199 @@ export default function WebViewScreen({ currentRoute, setCurrentRoute }: any) {
         } catch(e) {}
       }
 
+      function fixBadgesHeader() {
+        try {
+          const allHeadings = document.querySelectorAll('h1, h2, h3, h4, h5, h6, span, div, p');
+          allHeadings.forEach(el => {
+            const txt = (el.innerText || '').trim();
+            const lower = txt.toLowerCase();
+            if (
+              txt === 'Your Badges' || (txt.startsWith('Your Badges') && txt.length < 20) ||
+              txt === 'Top Streaks' || (txt.startsWith('Top Streaks') && txt.length < 20) ||
+              lower.includes("week's activity") || lower.includes("week’s activity") || lower.includes("weeks activity") ||
+              txt === 'Quick Actions' || (txt.startsWith('Quick Actions') && txt.length < 20)
+            ) {
+              el.style.setProperty('font-size', '14px', 'important');
+            }
+          });
+
+          const allTextEls = document.querySelectorAll('span, div, p, label');
+          allTextEls.forEach(el => {
+            const txt = (el.innerText || '').trim();
+            if (txt.includes('Auto-refresh') || txt.includes('auto-refresh')) {
+              el.style.setProperty('font-size', '12px', 'important');
+              el.style.setProperty('white-space', 'nowrap', 'important');
+              el.style.setProperty('word-break', 'keep-all', 'important');
+              el.style.setProperty('margin-top', '8px', 'important');
+
+              const parent = el.parentElement;
+              if (parent && parent.tagName !== 'BODY') {
+                parent.style.setProperty('display', 'flex', 'important');
+                parent.style.setProperty('flex-direction', 'column', 'important');
+                parent.style.setProperty('align-items', 'stretch', 'important');
+                parent.style.setProperty('justify-content', 'flex-start', 'important');
+                parent.style.setProperty('width', '100%', 'important');
+              }
+            }
+          });
+
+          // Force subject tags to stack vertically
+          const badgeTexts = ['jee', 'gate', 'physics', 'english', 'technical subject', 'maths', 'chemistry', 'biology', 'science'];
+          const allElements = document.querySelectorAll('span, div, p');
+          allElements.forEach(el => {
+              const txt = (el.innerText || '').trim().toLowerCase();
+              if (badgeTexts.includes(txt)) {
+                  let parent = el.parentElement;
+                  if (parent && parent.tagName !== 'BODY') {
+                      const compStyle = window.getComputedStyle(parent);
+                      if (compStyle.display === 'flex' && compStyle.flexDirection === 'row') {
+                          parent.style.setProperty('flex-direction', 'column', 'important');
+                          parent.style.setProperty('align-items', 'flex-start', 'important');
+                          parent.style.setProperty('gap', '6px', 'important');
+                          parent.style.setProperty('width', '100%', 'important');
+                      }
+                  }
+              }
+          });
+
+          // Un-squish Dates
+          allElements.forEach(el => {
+              const txt = (el.innerText || '').trim();
+              if (txt.includes('202') && (txt.includes('AM') || txt.includes('PM')) && txt.length > 10 && txt.length < 30) {
+                  el.style.setProperty('white-space', 'nowrap', 'important');
+                  el.style.setProperty('font-size', '11px', 'important');
+              }
+          });
+
+          // Move View and Delete buttons to the BOTTOM next to the "Solved" text
+          const viewButtons = Array.from(document.querySelectorAll('button, a')).filter(el => {
+              const txt = (el.innerText || '').trim().toLowerCase();
+              return txt === 'view' || txt.includes('view');
+          });
+          
+          viewButtons.forEach(btn => {
+              if (btn.getAttribute('data-moved')) return;
+              
+              // Find the container for View and Delete
+              let childToMove = btn;
+              let p = btn.parentElement;
+              if (p && p.tagName !== 'BODY') {
+                  const style = window.getComputedStyle(p);
+                  if (style.display === 'flex' && !p.innerText.includes('202')) {
+                      childToMove = p;
+                  }
+              }
+              
+              // Find the main top row holding tags, date, buttons
+              let mainRow = btn.parentElement;
+              for(let i=0; i<4; i++) {
+                  if (mainRow && mainRow.tagName !== 'BODY') {
+                      const style = window.getComputedStyle(mainRow);
+                      if (style.display === 'flex' && style.flexDirection === 'row' && mainRow.innerText.includes('202')) {
+                          break;
+                      }
+                      mainRow = mainRow.parentElement;
+                  }
+              }
+              
+              if (mainRow && childToMove) {
+                  // The "Solved" text is located in a row BELOW the mainRow.
+                  // Scan the siblings that come AFTER the mainRow to find it!
+                  let solvedEl = null;
+                  let sibling = mainRow.nextElementSibling;
+                  while (sibling) {
+                      const txt = (sibling.innerText || '').toLowerCase();
+                      if (txt.includes('solved') || txt.includes('pending')) {
+                          // Found the sibling containing the status text
+                          const spans = sibling.querySelectorAll('span, p, div');
+                          for (let j = 0; j < spans.length; j++) {
+                              const spanTxt = (spans[j].innerText || '').trim().toLowerCase();
+                              if ((spanTxt === 'solved' || spanTxt === 'pending' || spanTxt.includes('solved')) && spans[j].innerText.length < 20) {
+                                  solvedEl = spans[j];
+                                  break;
+                              }
+                          }
+                          if (!solvedEl && (txt.trim() === 'solved' || txt.trim() === 'pending')) {
+                              solvedEl = sibling;
+                          }
+                          break;
+                      }
+                      sibling = sibling.nextElementSibling;
+                  }
+                  
+                  if (solvedEl) {
+                      btn.setAttribute('data-moved', 'true');
+                      
+                      let solvedRow = solvedEl.parentElement;
+                      if (solvedRow) {
+                          solvedRow.style.setProperty('display', 'flex', 'important');
+                          solvedRow.style.setProperty('flex-direction', 'row', 'important');
+                          solvedRow.style.setProperty('justify-content', 'space-between', 'important');
+                          solvedRow.style.setProperty('align-items', 'center', 'important');
+                          solvedRow.style.setProperty('width', '100%', 'important');
+                          
+                          childToMove.style.setProperty('display', 'flex', 'important');
+                          childToMove.style.setProperty('flex-direction', 'row', 'important');
+                          childToMove.style.setProperty('gap', '10px', 'important');
+                          childToMove.style.setProperty('align-items', 'center', 'important');
+                          
+                          solvedRow.appendChild(childToMove);
+                      }
+                  }
+              }
+          });
+        } catch(e) {}
+      }
+
+      function fixExamCountdownButton() {
+        try {
+          const allButtons = document.querySelectorAll('button, a, div[role="button"]');
+          allButtons.forEach(btn => {
+            const txt = (btn.innerText || '').trim().toLowerCase();
+            if (txt.includes('back to streak')) {
+              btn.style.setProperty('width', '100%', 'important');
+              btn.style.setProperty('display', 'block', 'important');
+              btn.style.setProperty('text-align', 'center', 'important');
+              btn.style.setProperty('padding', '12px 16px', 'important');
+              btn.style.setProperty('margin', '16px auto', 'important');
+              btn.style.setProperty('border-radius', '8px', 'important');
+              btn.style.setProperty('box-sizing', 'border-box', 'important');
+              btn.style.setProperty('max-width', '100%', 'important');
+              
+              const compStyle = window.getComputedStyle(btn);
+              if (compStyle.display === 'flex' || compStyle.display === 'inline-flex') {
+                  btn.style.setProperty('display', 'flex', 'important');
+                  btn.style.setProperty('justify-content', 'center', 'important');
+                  btn.style.setProperty('align-items', 'center', 'important');
+              }
+            }
+          });
+        } catch(e) {}
+      }
+
       hideHeaders();
       checkAuth();
+      injectResponsiveTables();
+      fixBadgesHeader();
+      fixExamCountdownButton();
+      
+      try {
+        const observer = new MutationObserver(function() {
+          injectResponsiveTables();
+          fixBadgesHeader();
+          fixExamCountdownButton();
+        });
+        if (document.body) {
+          observer.observe(document.body, { childList: true, subtree: true });
+        }
+      } catch(e) {}
+
       setTimeout(hideHeaders, 100);
       setTimeout(checkAuth, 300);
       setTimeout(checkAuth, 1200);
+      setTimeout(injectResponsiveTables, 2000);
+      setTimeout(fixBadgesHeader, 2000);
+      setTimeout(fixExamCountdownButton, 2000);
     })();
     true;
   `;

@@ -363,18 +363,21 @@ export default function App() {
         )}
         screenOptions={{
           headerShown: true,
+          headerTransparent: true, // Make header transparent so website shows underneath
           headerStyle: {
-            backgroundColor: '#0f172a',
+            backgroundColor: 'transparent',
+            elevation: 0, // Remove shadow on Android
+            shadowOpacity: 0, // Remove shadow on iOS
           },
-          headerTintColor: '#ffffff',
+          headerTintColor: '#0f172a', // Make the hamburger menu icon dark/visible against light website backgrounds (or keep it white if the website is dark)
           headerTitleStyle: {
-            fontWeight: 'bold',
+            display: 'none', // Hide the text completely
           },
           drawerStyle: {
             backgroundColor: '#ffffff',
             width: 290,
           },
-          headerTitle: currentRoute.name,
+          headerTitle: '', // Remove the text
         }}
       >
         <Drawer.Screen name="Main">
